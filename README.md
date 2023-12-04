@@ -11,6 +11,7 @@ The work encamposes two different contributions:
 
 ## Reference
 [1] Hussein El Amouri, Thomas Lampert, Pierre Gançarski, Clément Mallet, CDPS: Constrained DTW-Preserving Shapelets. European Conference on Machine Learning and Principles and Practice of Knowledge Discovery in Databases 2022. [DOI](https://doi.org/10.1007/978-3-031-26387-3_2) [Link to the paper](https://hal.archives-ouvertes.fr/hal-03736948).
+
 [2] Hussein El Amouri, Thomas Lampert, Pierre Gançarski, Clément Mallet, Constrained DTW preserving shapelets for explainable time-series clustering. Pattern Recognition, 2023. [DOI](https://doi.org/10.1016/j.patcog.2023.109804),  [Link to the paper](https://hal.science/hal-04171112v1/document).
  
 ## Instructions
