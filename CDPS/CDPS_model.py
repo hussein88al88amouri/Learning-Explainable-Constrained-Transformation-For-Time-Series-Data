@@ -1,5 +1,4 @@
 """
-
 CDPS_model.py
 
 This module implements the "Constrained DTW Preserving Shapelets: CDPS" model,
@@ -140,44 +139,6 @@ def tslearn2torch(x_input, device="cpu"):
     """
     x_tensor = torch.Tensor(numpy.transpose(x_input, (0, 2, 1))).to(device)
     return x_tensor
-
-
-class MinPool1d(nn.Module):
-    """
-    Simple Hack for 1D min pooling. Input size = (N, C, L_in)
-    Output size = (N, C, L_out) where N = Batch Size, C = No. Channels
-    L_in = size of 1D channel, L_out = output size after pooling.
-    This implementation does not support custom strides, padding or dilation
-    Input shape compatibilty by kernel_size needs to be ensured
-
-    This code comes from:
-    https://github.com/reachtarunhere/pytorch-snippets/blob/master/min_pool1d.py
-    (under MIT license)
-    """
-
-    def __init__(self, kernel_size=3, type_='DEP'):
-        super(MinPool1d, self).__init__()
-        self.kernel_size = kernel_size
-        self.type_ = type_
-
-    def forward(self, x_input):
-        """
-        minpooling, either dependent or independent of time axis
-        Args:
-            x_input (tensor): input batch to perform minpoolin on
-        """
-        _, d, _, _ = [x_input.size(i) for i in range(4)]
-        if self.type_ == 'INDEP':
-            x_input = torch.stack([x_input[:, i, :, :].min(dim=2)[0]
-                                  for i in range(d)])
-            return x_input.transpose(1, 0).sum(1)
-        elif self.type_ == "DEP":
-            x_input = torch.sum(x_input, 1)
-            return x_input.min(dim=2)[0]
-        else:
-            raise ValueError("Unsupported value for 'type_'. "
-                             "Choose either 'INDEP' or 'DEP'.")
-
 
 class ShapeletLayer(nn.Module):
     """
