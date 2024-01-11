@@ -1,15 +1,11 @@
 """
 minpool.py
+
 This module implements multivariate minpooling
 inspired from:
 https://github.com/reachtarunhere/pytorch-snippets/blob/master/min_pool1d.py
-
-Raises:
-    ValueError: [description]
-
-Returns:
-    [type]: [description]
 """
+
 import torch
 import torch.nn as nn
 
