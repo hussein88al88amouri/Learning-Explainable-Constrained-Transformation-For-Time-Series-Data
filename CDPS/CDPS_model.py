@@ -1,8 +1,10 @@
 """
 CDPS_model.py
 
-This module implements the "Constrained DTW Preserving Shapelets: CDPS" model,
-as presented in the ECML Conference 2022.
+For more details, refer to the original article.
+This module implements the "Constrained DTW 
+Preserving Shapelets: CDPS" model,as presen-
+ted in the ECML Conference 2022.
 
 For more details, refer to the original article.
 
@@ -119,9 +121,10 @@ class CDPSModel(nn.Module):
         sc = 1 if self.scaled else 0
         self.losstrack = []
         self.loss_ = CDPSloss(gamma=self.gamma, alpha=self.alpha,
-                              period=self.period, fr=self.fr,
-                              dtw_max=dtw_max, device=self.device,
-                              saveloss=saveloss, scaled=sc,)
+                              fr=self.fr, dtw_max=dtw_max,
+                              device=self.device, scaled=sc
+                              saveloss=saveloss)
+
         self.type_ = type_
         self.savecheckpoint = False
         self.ple = ple
