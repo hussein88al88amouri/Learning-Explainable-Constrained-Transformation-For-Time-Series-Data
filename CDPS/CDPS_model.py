@@ -122,7 +122,7 @@ class CDPSModel(nn.Module):
         self.losstrack = []
         self.loss_ = CDPSloss(gamma=self.gamma, alpha=self.alpha,
                               fr=self.fr, dtw_max=dtw_max,
-                              device=self.device, scaled=sc
+                              device=self.device, scaled=sc,
                               saveloss=saveloss)
 
         self.type_ = type_

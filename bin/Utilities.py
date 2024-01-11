@@ -385,32 +385,47 @@ def FeatureSpaceUMAP(data, dataset, label, labelType, alpha=None, gamma=None, fr
                 axs1.scatter([embedding[i[0],0], embedding[i[1],0]], [embedding[i[0],1], embedding[i[1],1]], color='green', alpha=0.05)
         if cl.shape[0] != 0:
             for i in cl:
-                axs1.plot([embedding[i[0],0], embedding[i[1],0]], [embedding[i[0],1], embedding[i[1],1]], color='black', linestyle='dotted', linewidth=3, alpha=0.8)
-                axs1.scatter([embedding[i[0],0], embedding[i[1],0]], [embedding[i[0],1], embedding[i[1],1]], color='red', alpha=0.05)
+                axs1.plot([embedding[i[0], 0], embedding[i[1], 0]],
+                          [embedding[i[0], 1], embedding[i[1], 1]],
+                          color='black', linestyle='dotted',
+                          linewidth=3, alpha=0.8)
+                axs1.scatter([embedding[i[0], 0], embedding[i[1], 0]],
+                             [embedding[i[0], 1], embedding[i[1], 1]],
+                             color='red', alpha=0.05)
         axs1.text(min(embedding[:, 0]), max(embedding[:, 1]),
-                textstr, bbox=props, fontsize=10, verticalalignment='top')
+                  textstr, bbox=props, fontsize=10, verticalalignment='top')
     else:
-        fig, axs0 = plt.subplots(1,1)
-
-    axs0.scatter(embedding[:, 0], embedding[:, 1], c=[sns.color_palette(palette,np.unique(label).shape[0]+1)[x] for x in list(label.astype(int))], alpha=0.7)
+        fig, axs0 = plt.subplots(1, 1)
+    axs0.scatter(embedding[:, 0], embedding[:, 1],
+                 c=[sns.color_palette(palette,
+                                      np.unique(label).shape[0]+1)[x]
+                    for x in list(label.astype(int))],
+                 alpha=0.7)
     axs0.set_title("Data Points in the Feature Space.")
     axs0.text(min(embedding[:, 0]), max(embedding[:, 1]),
-             textstr, bbox=props, fontsize=10, verticalalignment='top')
-    if dirsave != None:
+              textstr, bbox=props, fontsize=10, verticalalignment='top')
+    if dirsave is not None:
         if not os.path.exists(dirsave):
             os.makedirs(dirsave)
-        plt.savefig("%s/%s_fr_%.2f_alpha_%0.1f_gamma_%0.1f.png" %
-                    (dirsave, dataset,fr, alpha, gamma,),  format='png', dpi=1200)
+        plt.savefig(f"{dirsave}/{dataset}_fr_{fr:.2f}"
+                    f"alpha_{alpha:.1f}_gamma_{gamma:.1f}.png",
+                    dpi=1200)
     return embedding
 
 
-def FeatureSpacePCA(data, dataset, label, labelType, alpha=None, gamma=None, fr=None, n_components=2, algorithm=None, dirsave=None, description=None, ml=None, cl=None, palette="hot", linestyle='.'):
+def FeatureSpacePCA(data, dataset, label, labelType,
+                    alpha=None, gamma=None, fr=None,
+                    n_components=2, algorithm=None,
+                    dirsave=None, description=None,
+                    ml=None, cl=None, palette="hot",
+                    linestyle='.'):
     '''Visualization using PCA in either 2D space or 3D space
         algorithm: string specify the algorithm used to predict the labels
-        labelType: string specifying the typer of the labels (predicted / True)    
+        labelType: string specifying the typer of the labels (predicted / True)
         save: bool to specify if to save the plot
-        dirsave: directory to save the plot to. Default (None) will not save the plots
-        '''
+        dirsave: directory to save the plot to.
+        Default (None) will not save the plots.
+    '''
     plt.rcParams['figure.constrained_layout.use'] = True
     pca = PCA(n_components=int(n_components)).fit(data)
     pca_d = pca.transform(data)
@@ -418,73 +433,113 @@ def FeatureSpacePCA(data, dataset, label, labelType, alpha=None, gamma=None, fr=
     textstr = '\n'.join((
         r'$\gamma=%.1f$' % (gamma, ),
         r'$\alpha=%.1f$' % (alpha, ),
-        r'$fr=%.2f$' % (fr, ),)) if fr != None else ''
+        r'$fr=%.2f$' % (fr, ),)) if fr is not None else ''
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     if n_components == 3:
-        from mpl_toolkits.mplot3d import Axes3D
         print(n_components)
         fig = plt.figure()
         if fr:
-            ax = fig.add_subplot(211, projection='3d') 
+            ax = fig.add_subplot(211, projection='3d')
             ax1 = fig.add_subplot(212, projection='3d')
-            ax1.scatter(pca_d[:, 0], pca_d[:, 1], pca_d[:, 2], c=[sns.color_palette(palette,np.unique(label).shape[0]+1)[x] for x in list(label.astype(int))], alpha=0.7)
+            ax1.scatter(pca_d[:, 0], pca_d[:, 1], pca_d[:, 2],
+                        c=[sns.color_palette(palette,
+                                             np.unique(label).shape[0]+1)[x]
+                           for x in list(label.astype(int))],
+                        alpha=0.7)
             ax1.set_title("The constraint information is displayed. ")
             ax1.set_xlabel('PCA1')
             ax1.set_ylabel('PCA2')
             ax1.set_zlabel('PCA3')
             if ml.shape[0] != 0:
                 for i in ml:
-                    ax1.plot([pca_d[i[0],0],pca_d[i[1],0]],[pca_d[i[0],1],pca_d[i[1],1]],[pca_d[i[0],2],pca_d[i[1],2]],color='black', linestyle='solid', linewidth=5, alpha=0.8)
-                    ax1.scatter([pca_d[i[0],0],pca_d[i[1],0]],[pca_d[i[0],1],pca_d[i[1],1]],[pca_d[i[0],2],pca_d[i[1],2]], color='green', alpha=0.05)
+                    ax1.plot([pca_d[i[0], 0], pca_d[i[1], 0]],
+                             [pca_d[i[0], 1], pca_d[i[1], 1]],
+                             [pca_d[i[0], 2], pca_d[i[1], 2]],
+                             color='black', linestyle='solid',
+                             linewidth=5, alpha=0.8)
+                    ax1.scatter([pca_d[i[0], 0], pca_d[i[1], 0]],
+                                [pca_d[i[0], 1], pca_d[i[1], 1]],
+                                [pca_d[i[0], 2], pca_d[i[1], 2]],
+                                color='green', alpha=0.05)
             if cl.shape[0] != 0:
                 for i in cl:
-                    ax1.plot([pca_d[i[0],0],pca_d[i[1],0]],[pca_d[i[0],1],pca_d[i[1],1]],[pca_d[i[0],2],pca_d[i[1],2]], color='black', linestyle='dotted', linewidth=3, alpha=0.8)
-                    ax1.scatter([pca_d[i[0],0],pca_d[i[1],0]],[pca_d[i[0],1],pca_d[i[1],1]],[pca_d[i[0],2],pca_d[i[1],2]], color='red', alpha=0.05)
+                    ax1.plot([pca_d[i[0], 0], pca_d[i[1], 0]],
+                             [pca_d[i[0], 1], pca_d[i[1], 1]],
+                             [pca_d[i[0], 2], pca_d[i[1], 2]],
+                             color='black', linestyle='dotted',
+                             linewidth=3, alpha=0.8)
+                    ax1.scatter([pca_d[i[0], 0], pca_d[i[1], 0]],
+                                [pca_d[i[0], 1], pca_d[i[1], 1]],
+                                [pca_d[i[0], 2], pca_d[i[1], 2]],
+                                color='red', alpha=0.05)
         else:
             ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(pca_d[:, 0], pca_d[:, 1], pca_d[:, 2], c=[sns.color_palette(palette,np.unique(label).shape[0]+1)[x] for x in list(label.astype(int))], alpha=0.7)
+        ax.scatter(pca_d[:, 0], pca_d[:, 1], pca_d[:, 2],
+                   c=[sns.color_palette(palette,
+                                        np.unique(label).shape[0]+1)[x]
+                      for x in list(label.astype(int))],
+                   alpha=0.7)
         ax.set_title("Data Points in the Feature Space.")
         ax.set_xlabel('PCA1')
         ax.set_ylabel('PCA2')
         ax.set_zlabel('PCA3')
         ax.text(min(pca_d[:, 0]), min(pca_d[:, 1]), max(
             pca_d[:, 2]), textstr, bbox=props, fontsize=10, zorder=1)
-        plt.suptitle("%s %s %s %s" % (dataset, algorithm, labelType, description))
+        plt.suptitle(f"{dataset} {algorithm} {labelType} {description}")
     else:
         fig = plt.figure()
         if fr:
             ax = fig.add_subplot(211)
             ax1 = fig.add_subplot(212)
-            ax1.scatter(pca_d[:, 0], pca_d[:, 1], c=[sns.color_palette(palette,np.unique(label).shape[0]+1)[x] for x in list(label.astype(int))], alpha=0.7)
-            ax1.set_title("The constraint information is displayed. ")
+            ax1.scatter(pca_d[:, 0], pca_d[:, 1],
+                        c=[sns.color_palette(palette,
+                                             np.unique(label).shape[0]+1)[x]
+                           for x in list(label.astype(int))],
+                        alpha=0.7)
+            ax1.set_title("The constraint information is displayed.")
             ax1.set_xlabel('PCA1')
             ax1.set_ylabel('PCA2')
             if ml.shape[0] != 0:
                 for i in ml:
-                    ax1.plot([pca_d[i[0],0],pca_d[i[1],0]],[pca_d[i[0],1],pca_d[i[1],1]], color='black', linestyle='solid', linewidth=5, alpha=0.8)
-                    ax1.scatter([pca_d[i[0],0],pca_d[i[1],0]],[pca_d[i[0],1],pca_d[i[1],1]], color='green', alpha=0.05)
+                    ax1.plot([pca_d[i[0], 0], pca_d[i[1], 0]],
+                             [pca_d[i[0], 1], pca_d[i[1], 1]],
+                             color='black', linestyle='solid',
+                             linewidth=5, alpha=0.8)
+                    ax1.scatter([pca_d[i[0], 0], pca_d[i[1], 0]],
+                                [pca_d[i[0], 1], pca_d[i[1], 1]],
+                                color='green', alpha=0.05)
             if cl.shape[0] != 0:
                 for i in cl:
-                    ax1.plot([pca_d[i[0],0],pca_d[i[1],0]],[pca_d[i[0],1],pca_d[i[1],1]], color='black', linestyle='dotted', linewidth=3, alpha=0.8)
-                    ax1.scatter([pca_d[i[0],0],pca_d[i[1],0]],[pca_d[i[0],1],pca_d[i[1],1]], color='red', alpha=0.05)
+                    ax1.plot([pca_d[i[0], 0], pca_d[i[1], 0]],
+                             [pca_d[i[0], 1], pca_d[i[1], 1]],
+                             color='black', linestyle='dotted',
+                             linewidth=3, alpha=0.8)
+                    ax1.scatter([pca_d[i[0], 0], pca_d[i[1], 0]],
+                                [pca_d[i[0], 1], pca_d[i[1], 1]],
+                                color='red', alpha=0.05)
         else:
             ax = fig.add_subplot(111)
-        ax.scatter(pca_d[:, 0], pca_d[:, 1], c=[sns.color_palette(palette,np.unique(label).shape[0]+1)[x] for x in list(label.astype(int))], alpha=0.7)
+        ax.scatter(pca_d[:, 0], pca_d[:, 1],
+                   c=[sns.color_palette(palette,
+                                        np.unique(label).shape[0]+1)[x]
+                      for x in list(label.astype(int))],
+                   alpha=0.7)
         ax.set_title("Data Points in the Feature Space.")
         ax.set_xlabel('PCA1')
         ax.set_ylabel('PCA2')
         ax.text(min(pca_d[:, 0]), max(pca_d[:, 1]), textstr,
                 bbox=props, fontsize=10, verticalalignment='top')
-        plt.suptitle("%s %s %s %s" % (dataset, algorithm, labelType, description))
-    if dirsave != None:
+        plt.suptitle(f"{dataset} {algorithm} {labelType} {description}")
+    if dirsave is not None:
         if not os.path.exists(dirsave):
             os.makedirs(dirsave)
-        plt.savefig("%s/%s_fr_%.2f_alpha_%0.1f_gamma_%0.1f.png" %
-                    (dirsave, dataset, fr, alpha, gamma,),  format='png', dpi=1200)
-
+        plt.savefig(f"{dirsave}/{dataset}_fr_{fr:.2f}"
+                    f"alpha_{alpha:.1f}_gamma_{gamma:.1f}.png",
+                    dpi=1200)
 
 
 def factor(n):
+    """"""
     i = 2
     factors = []
     while i * i <= n:
@@ -499,49 +554,40 @@ def factor(n):
 
 
 def numSubplots(n):
-    from sympy import isprime
     """
-    Purpose
-    Calculate how many rows and columns of sub-plots are needed to neatly display n subplots. 
-    Parameters
-    ----------
-    n : int
-        the desired number of subplots.
-
+    Calculate  subplots number of rows and columns
+    Paramters
+    -------
+        n : int,  the desired number of subplots.
     Returns
     -------
-    p : 2D int array
-        Defining the number of rows and number of columns required to show n plots.
-    n : int
-        the current number of subplots. This output is used only by this function for a recursive call.
-    Example: neatly lay out 13 sub-plots
-    >> p=numSubplots(13)
-    p = np.array([3,5],dtype=int32)
-    Rob Campbell - January 2010
+        p : 2D int array [rows, columns]
+        n : int, number of subplots.
+        Example: neatly lay out 13 sub-plots
+        >> p=numSubplots(13)
+        >> p = np.array([3,5],dtype=int32)
+        by Rob Campbell - January 2010
     """
-    while isprime(n) & n>4: 
-        n += 1
 
+    from sympy import isprime
+    while isprime(n) & n > 4:
+        n += 1
     p = factor(n)
     if len(p) == 1:
-        p = [1,p[0]]
+        p = [1, p[0]]
         return p, n
-    
-    while len(p)>2:
-        if len(p)>=4:
-            p[0] = p[0]*p[-2]
-            p[1] = p[1]*p[-1]
+    while len(p) > 2:
+        if len(p) >= 4:
+            p[0] = p[0] * p[-2]
+            p[1] = p[1] * p[-1]
             p[-2:] = []
         else:
-            p[0]= p[0]*p[1]
-            p[-2:-1] = []
-         
+            p[0] = p[0] * p[1]
+            p[-2: -1] = []
         p.sort()
-    
-    while p[1]/p[0]>2.5:
+    while p[1] / p[0] > 2.5:
         N = n+1
-        p,n = numSubplots(N)
-
+        p, n = numSubplots(N)
     return p, n
 
 
