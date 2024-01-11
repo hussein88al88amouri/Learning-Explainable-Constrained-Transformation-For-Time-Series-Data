@@ -45,7 +45,7 @@ from minpool1D import MinPool1d
 from utls import generate_random_indices, compute_dtw_indep_dep
 from utls import _kmeans_init_shapelets, tslearn2torch
 from ShapeletLayer import ShapeletLayer
-
+from CDPSloss import CDPSloss
 
 class CDPSModel(nn.Module):
     """Learning DTW-Preserving Shapelets (LDPS) model.
@@ -84,16 +84,12 @@ class CDPSModel(nn.Module):
                  gamma=None,
                  alpha=None,
                  fr=None,
-                 period=5,
                  dtw_max=25,
                  constraints_in_batch=4,
                  device='cpu',
                  type_='INDEP',
                  verbose=True,
                  saveloss=False,
-                 citer=None,
-                 patience=10,
-                 min_delta=0,
                  ple=50,
                  scaled=True,
                  ):
@@ -107,7 +103,6 @@ class CDPSModel(nn.Module):
         self.batch_size = batch_size
         self.constriants_inbatch = constraints_in_batch
         self.verbose = verbose
-        self.period = period
         self.fr = fr
         self.ml = ml
         self.cl = cl
@@ -127,11 +122,8 @@ class CDPSModel(nn.Module):
                               period=self.period, fr=self.fr,
                               dtw_max=dtw_max, device=self.device,
                               saveloss=saveloss, scaled=sc,)
-        self.citer = citer
         self.type_ = type_
         self.savecheckpoint = False
-        self.patience = patience
-        self.min_delta = min_delta
         self.ple = ple
         self._set_layers_and_optim()
 
@@ -144,9 +136,6 @@ class CDPSModel(nn.Module):
     def _model_load(fname, device='cpu', usepickle=False):
         """
         """
-        if usepickle:
-            # used for older models that are saved using pickle
-            return pickle.load(open(fname, "rb"))
         return torch.load(fname, map_location=device).to(device)
 
     def _set_layers_and_optim(self):

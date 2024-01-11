@@ -37,7 +37,6 @@ class CDPSloss(nn.Module):
         self.gamma = gamma
         self.alpha = alpha
 
-
         self.scaled = scaled
         self.dtw_max = dtw_max
 
