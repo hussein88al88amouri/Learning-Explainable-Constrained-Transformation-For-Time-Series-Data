@@ -3,42 +3,41 @@ Utilities.py
 
 List of python function necessary for visualization, clusterin, etc.
 """
+import os
+from tqdm import tqdm
 
+import random
 import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import CopKmeans_DBA_Test as CopKmeansDBA
+import matplotlib.patches as patches
+
 from sklearn.cluster import KMeans
 from sklearn.metrics import normalized_mutual_info_score, adjusted_rand_score
-import matplotlib.pyplot as plt
-from copkmeans.cop_kmeans import cop_kmeans
-import os
-from tslearn.clustering import TimeSeriesKMeans
-from  umap import umap_ as umap
-import seaborn as sns
 from sklearn.decomposition import PCA
 from sktime.utils.data_io import load_from_tsfile_to_dataframe
-import matplotlib.patches as patches
 from tslearn.metrics import cdist_dtw
 from tslearn.metrics import dtw
-import dtw as dtw_python
-from tqdm import tqdm
-import CopKmeans_DBA_Test as CopKmeansDBA
-from matplotlib.gridspec import GridSpec
-import matplotlib.patches as mpatches
-import pandas as pd
+from tslearn.clustering import TimeSeriesKMeans
+from umap import umap_ as umap
+from copkmeans.cop_kmeans import cop_kmeans
 
 
 def labelsToint(labels):
     tempdict = dict(enumerate(np.unique(labels)))
     labb = np.empty(labels.shape[0])
     for i in tempdict.items():
-        labb[ labels == i[1] ] = i[0]
+        labb[labels == i[1]] = i[0]
     return labb
 
 
 def load_dataset_ts(ds_name, Type, path):
-    ''' 
+    '''
         ds_name: dataset name
-        Type: either TRAIN or TEST 
-        path: directory path to the dataset 
+        Type: either TRAIN or TEST
+        path: directory path to the dataset
         Not that this only work with fixed time series length
     '''
     data, truelabels = load_from_tsfile_to_dataframe(
@@ -48,17 +47,17 @@ def load_dataset_ts(ds_name, Type, path):
     slength = data['dim_0'][0].shape[0]
     temp = np.empty((nsamples, slength, ndims))
     for i in range(ndims):
-             temp1 = data[f'dim_{i}'].values
-             temp1 = np.concatenate([temp1[j].values
-                                     for j in range(nsamples
-                                    )]).reshape((nsamples, slength))
-             temp[:, :, i] = temp1
+        temp1 = data[f'dim_{i}'].values
+        temp1 = np.concatenate([temp1[j].values
+                                for j in range(nsamples
+                            )]).reshape((nsamples, slength))
+        temp[:, :, i] = temp1
 
     return temp, truelabels
 
 
 def dtw_fast(s1, s2):
-    ds = dtw(s1,s2)
+    ds = dtw(s1, s2)
     return ds
 
 
@@ -80,7 +79,8 @@ def DTWMax(data):
     pi = 0
     mlmax = 0
     for ci in range(blocksz, sz + blocksz, blocksz):
-        dtw_ = cdist_dtw(data[pi:ci,:],data[pi:ci,:]) 
+        dtw_ = cdist_dtw(data[pi: ci, :],
+                         data[pi: ci, :]) 
         dtw_[np.isinf(dtw_)] = 0
         mcmax = np.max(dtw_)
         if mcmax > mlmax:
@@ -89,7 +89,7 @@ def DTWMax(data):
     pi = 0
     for ci in range(blocksz, sz, blocksz):
         mcmax = DTWmaxpairwise(data[pi: ci, :],
-                               data[pi + blocksz: ci+ blocksz, :])
+                               data[pi + blocksz: ci + blocksz, :])
         if mcmax > mlmax:
             mlmax = mcmax
     return mlmax
@@ -99,10 +99,11 @@ def DTWmaxpairwise(DL1,DL2):
     mlmax = 0
     for i in DL1:
         for j in DL2:
-            cml = dtw_fast(i,j)
+            cml = dtw_fast(i, j)
             if cml > mlmax:
                 mlmax = cml
     return mlmax
+
 
 def n_classes(y):
     return np.unique(y).shape[0]
@@ -120,19 +121,24 @@ def sortdata(data, truelabels):
     return np.array(sdata), np.array(sorted(truelabels))
 
 
-def plotTimeSeries(TS, sep=3, gap=20, ax=None,figsize=(10,5),color="tab10"):
+def plotTimeSeries(TS, sep=3, gap=20, ax=None,
+                   figsize=(10,5), color="tab10"):
     ts, dim = TS.shape
-    ts1 = np.concatenate([TS, np.full((gap, dim) ,np.nan)]).reshape((-1), order='F')
+    ts1 = np.concatenate([TS, np.full((gap, dim), np.nan)]
+                         ).reshape((-1), order='F')
     dim1 = np.array([[i] * (ts + gap) for i in range(dim)]).reshape((-1))
-    TSdf = pd.DataFrame({'ts':ts1,'dim':dim1})
-    scale = np.concatenate([np.arange(0, 1, 1 / (sep - 1)), np.array([1])])
-    ymin = TSdf.ts.min() - 2
-    ymax = TSdf.ts.max() + 2
-    if not ax:
+    TSdf = pd.DataFrame({'ts': ts1, 'dim': dim1})
+    if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
-    ax = sns.lineplot(y=TSdf['ts'],x=TSdf.index, hue=TSdf['dim'],ax=ax,legend=False,linewidth=3, palette=[color])
-    ax.set(ylabel = None)
-    ax.set_xlim(0,ts)
+    ax = sns.lineplot(y=TSdf['ts'],
+                      x=TSdf.index,
+                      hue=TSdf['dim'],
+                      ax=ax,
+                      legend=False,
+                      linewidth=3,
+                      palette=[color])
+    ax.set(ylabel=None)
+    ax.set_xlim(0, ts)
     return ax
 
 
@@ -140,10 +146,13 @@ def getTSidx(data,TS):
     return np.argwhere(data.reshape((data.shape[0],
                                      -1),
                                     order='F') == TS.reshape((1, -1),
-                                                             order='F'))[0,0]
+                                                             order='F'))[0, 0]
 
 
-def plotclusters(datasetname, data, truelabels, dir_=None, sample=False, samplenb=5,figsize=(10,5),color='tab10'):
+def plotclusters(datasetname, data,
+                 truelabels, dir_=None,
+                 sample=False, samplenb=5,
+                 figsize=(10, 5), color='tab10'):
     ''' 
     Plot the Timeseries in each clustering group
         dir: directory path to savee the clusters plot
@@ -153,30 +162,37 @@ def plotclusters(datasetname, data, truelabels, dir_=None, sample=False, samplen
     labels = np.unique(truelabels)
     colors = dict(zip(labels, sns.color_palette("tab10", nclusters).as_hex()))
     nm, _ = numSubplots(nclusters)
-    plt.figure(constrained_layout=False,tight_layout=True)
+    plt.figure(constrained_layout=False, tight_layout=True)
     plt.suptitle(datasetname, fontsize=22)
     for j in range(nclusters):
         ax = plt.subplot(nm[0], nm[1], j+1)
         temp = data[truelabels == labels[j]]
         cs = temp.shape[0]
         if sample:
-            idx = np.random.default_rng().choice(cs,size=samplenb,replace=False)
+            idx = np.random.default_rng().choice(cs,
+                                                 size=samplenb,
+                                                 replace=False)
             for TS in temp[idx]:
-                ax = plotTimeSeries(TS, sep=2, gap=30, ax=ax,figsize=(7, 5), color=colors[labels[j]])
+                ax = plotTimeSeries(TS, sep=2, gap=30,
+                                    ax=ax, figsize=(7, 5),
+                                    color=colors[labels[j]])
             plt.title(f'Class {int(labels[j])}', y=0.9999, pad=3)
         else:
             for TS in temp:
-                ax = plotTimeSeries(TS, sep=2, gap=30, ax=ax,figsize=(7, 5),color=color)
+                ax = plotTimeSeries(TS, sep=2, gap=30,
+                                    ax=ax,figsize=(7, 5),
+                                    color=color)
             plt.title('cluster:{}, csize:{}'.format(
                    j, cs), y=0.9999, pad=3, fontsize=14)
     fig = plt.gcf()
-    patches = [ plt.plot([],[], ls="-", linewidth=4, color=sns.color_palette('tab10',dim)[i], 
-            label=f"dim:{i}")[0] for i in range(dim) ]    
+    patches = [plt.plot([], [], ls="-", linewidth=4,
+                        color=sns.color_palette('tab10', dim)[i],
+                        label=f"dim:{i}")[0] for i in range(dim)]
     fig.legend(handles=patches, bbox_to_anchor=(0.5, - 0.05),
                loc='lower center', ncol=dim, prop={'size': 12})
     fig.set_size_inches(15.5, 10.5, forward=True)
     fig.tight_layout()
-    if dir_ != None:
+    if dir_ is not None:
         if not os.path.exists(dir_):
             os.makedirs(dir_)
         plt.savefig(f"{dir_}/{datasetname}_Clusters.pdf")
@@ -196,9 +212,7 @@ def SdmaT(data_shtr):
         data_shtr: Shapelet Transformed dataset.
     '''
     sdm = np.zeros([data_shtr.shape[0], data_shtr.shape[0]])
-    numb = data_shtr.shape[0] * (data_shtr.shape[0]+1)/2
     for ix in range(1, data_shtr.shape[0]):
-        curr = ix * (ix + 1) / 2
         for jx in range(0, ix):
             sdm[ix, jx] = np.linalg.norm(data_shtr[ix, :] - data_shtr[jx, :])
             sdm[jx, ix] = sdm[ix, jx]
@@ -226,12 +240,13 @@ def DMAPplot(datasetname, dmap, labels, dir_=None):
     for r in rectangles:
         ax.add_artist(rectangles[r])
         rx, ry = rectangles[r].get_xy()
-        cx = rx + rectangles[r].get_width()/2.0
-        cy = ry + rectangles[r].get_height()/2.0
+        cx = rx + rectangles[r].get_width() / 2.0
+        cy = ry + rectangles[r].get_height() / 2.0
         ax.annotate(r, (cx, cy), color='magenta', weight='bold',
-                    fontsize=15 if lac[0].shape[0] > 5 else 30, ha='center', va='center')
+                    fontsize=15 if lac[0].shape[0] > 5 else 30,
+                    ha='center', va='center')
     fig.set_size_inches(10.5, 10.5, forward=True)
-    fig.tight_layout()  
+    fig.tight_layout()
     if dir_ is not None:
         if not os.path.exists(dir_):
             os.makedirs(dir_)
@@ -241,10 +256,9 @@ def DMAPplot(datasetname, dmap, labels, dir_=None):
 
 def constraint_generation_notarray(fr_, data, truelabels):
     ''' 
-    Generation of constraints randomly (i,j, -1[CL]/+1[ML]) 
+    Generation of constraints randomly (i,j, -1[CL]/+1[ML])
         fr_: fraction of datapoints to add constraints to
     '''
-    import random
     xz = data.shape[0]
     nc = int(round(fr_*xz))
     C_ML = []
@@ -382,8 +396,8 @@ def COPKmeansClusteringDBA(data, truelabels, n_clusters,
                                           initialization=initialization)
     nmis.append(normalized_mutual_info_score(truelabels, pred_labels[0]))
     aris.append(adjusted_rand_score(truelabels, pred_labels[0]))
-            print(f"COPKmeansClustering [{i_trial}],"
-                  f"nmi:{nmis[-1]}, ri:{aris[-1]}")
+    print(f"COPKmeansClustering [{0}],"
+          f"nmi:{nmis[-1]}, ri:{aris[-1]}")
     best_labels = pred_labels[0]
     centers = pred_labels[1]
     for i_trial in range(1, trial):
@@ -397,8 +411,8 @@ def COPKmeansClusteringDBA(data, truelabels, n_clusters,
             print(f"COPKmeansClustering [{i_trial}],"
                   f"nmi:{nmis[-1]}, ri:{aris[-1]}")
         if nmis[i_trial] > nmis[i_trial-1]:
-            best_labels = pred_labels [0]
-            centers = pred_labels [1]
+            best_labels = pred_labels[0]
+            centers = pred_labels[1]
     return best_labels, nmis, aris, centers
 
 
@@ -422,7 +436,7 @@ def FeatureSpaceUMAP(data, dataset, label, labelType,
     Visualization using UMAP in 2D space
     algorithm: string specify the algorithm used to predict the labels
     labelType: string specifying the typer of the labels (predicted / True)
-    dirsave: directory to save the plot to. 
+    dirsave: directory to save the plot to.
     Default (None) will not save the plots
     '''
     plt.rcParams['figure.constrained_layout.use'] = True
@@ -431,7 +445,7 @@ def FeatureSpaceUMAP(data, dataset, label, labelType,
     textstr = '\n'.join((
         r'$\gamma=%.1f$' % (gamma, ),
         r'$\alpha=%.1f$' % (alpha, ),
-        r'$fr=%.2f$' % (fr, ),)) if fr != None else ''
+        r'$fr=%.2f$' % (fr, ),)) if fr is not None else ''
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     if fr:
         fig, axs = plt.subplots(2, 1)
