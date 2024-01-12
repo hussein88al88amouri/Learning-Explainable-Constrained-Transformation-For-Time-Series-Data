@@ -1,3 +1,9 @@
+"""
+Utilities.py
+
+List of python function necessary for visualization, clusterin, etc.
+"""
+
 import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.metrics import normalized_mutual_info_score, adjusted_rand_score
@@ -18,7 +24,7 @@ import CopKmeans_DBA_Test as CopKmeansDBA
 from matplotlib.gridspec import GridSpec
 import matplotlib.patches as mpatches
 import pandas as pd
-#_______________________________________________________________________________________________________________________________________________#
+
 
 def labelsToint(labels):
     tempdict = dict(enumerate(np.unique(labels)))
@@ -27,45 +33,53 @@ def labelsToint(labels):
         labb[ labels == i[1] ] = i[0]
     return labb
 
+
 def load_dataset_ts(ds_name, Type, path):
-    ''' ds_name: dataset name
+    ''' 
+        ds_name: dataset name
         Type: either TRAIN or TEST 
         path: directory path to the dataset 
-        Not that this only work with fixed time series length'''
+        Not that this only work with fixed time series length
+    '''
     data, truelabels = load_from_tsfile_to_dataframe(
-        os.path.join(path, "{}/{}_{}.ts".format(ds_name, ds_name, Type)))
+        os.path.join(path, f"{ds_name}/{ds_name}_{Type}.ts"))
     nsamples = data.shape[0]
     ndims = data.shape[1]
     slength = data['dim_0'][0].shape[0]
     temp = np.empty((nsamples, slength, ndims))
     for i in range(ndims):
              temp1 = data[f'dim_{i}'].values
-             temp1 = np.concatenate([temp1[j].values for j in range(nsamples)]).reshape((nsamples, slength))
-             temp[:,:,i] = temp1
+             temp1 = np.concatenate([temp1[j].values
+                                     for j in range(nsamples
+                                    )]).reshape((nsamples, slength))
+             temp[:, :, i] = temp1
 
     return temp, truelabels
+
 
 def dtw_fast(s1, s2):
     ds = dtw(s1,s2)
     return ds
 
+
 def DTWMax_dtwPython(data):
     sz = data.shape[0]
     maxdtw = 0
-    for i in tqdm(range(sz-1)):
+    for i in tqdm(range(sz - 1)):
         for j in range(i+1, sz):
-            value = dtw_fast(data[i],data[j])
+            value = dtw_fast(data[i], data[j])
             if maxdtw < value:
                 maxdtw = value
     return maxdtw
 
+
 def DTWMax(data):
     sz = data.shape[0]
-    blocksz = sz//4 if sz%100 == 0 else sz//2
+    blocksz = sz // 4 if sz % 100 == 0 else sz // 2
     ml = []
     pi = 0
     mlmax = 0
-    for ci in range(blocksz,sz+blocksz,blocksz):
+    for ci in range(blocksz, sz + blocksz, blocksz):
         dtw_ = cdist_dtw(data[pi:ci,:],data[pi:ci,:]) 
         dtw_[np.isinf(dtw_)] = 0
         mcmax = np.max(dtw_)
@@ -73,11 +87,13 @@ def DTWMax(data):
             mlmax = mcmax
         pi = ci
     pi = 0
-    for ci in range(blocksz,sz,blocksz):
-        mcmax = DTWmaxpairwise(data[pi:ci,:],data[pi+blocksz:ci+blocksz,:])
+    for ci in range(blocksz, sz, blocksz):
+        mcmax = DTWmaxpairwise(data[pi: ci, :],
+                               data[pi + blocksz: ci+ blocksz, :])
         if mcmax > mlmax:
             mlmax = mcmax
     return mlmax
+
 
 def DTWmaxpairwise(DL1,DL2):
     mlmax = 0
@@ -91,8 +107,11 @@ def DTWmaxpairwise(DL1,DL2):
 def n_classes(y):
     return np.unique(y).shape[0]
 
+
 def sortdata(data, truelabels):
-    '''Return the sorted data according to the given labels'''
+    '''
+        Return the sorted data according to the given labels
+    '''
     sdata = []
     for i in np.unique(truelabels):
         for j in range(data.shape[0]):
@@ -100,32 +119,35 @@ def sortdata(data, truelabels):
                 sdata.append(data[j])
     return np.array(sdata), np.array(sorted(truelabels))
 
+
 def plotTimeSeries(TS, sep=3, gap=20, ax=None,figsize=(10,5),color="tab10"):
     ts, dim = TS.shape
-    TSdf = pd.DataFrame({'ts':np.concatenate([TS,np.full((gap,dim),np.nan)]).reshape((-1),order='F'),'dim':np.array([[i]*(ts+gap) for i in range(dim)]).reshape((-1))})
-    scale = np.concatenate([np.arange(0,1,1/(sep-1)),np.array([1])])
+    ts1 = np.concatenate([TS, np.full((gap, dim) ,np.nan)]).reshape((-1), order='F')
+    dim1 = np.array([[i] * (ts + gap) for i in range(dim)]).reshape((-1))
+    TSdf = pd.DataFrame({'ts':ts1,'dim':dim1})
+    scale = np.concatenate([np.arange(0, 1, 1 / (sep - 1)), np.array([1])])
     ymin = TSdf.ts.min() - 2
     ymax = TSdf.ts.max() + 2
     if not ax:
         fig, ax = plt.subplots(figsize=figsize)
     ax = sns.lineplot(y=TSdf['ts'],x=TSdf.index, hue=TSdf['dim'],ax=ax,legend=False,linewidth=3, palette=[color])
-    # ax.axvline(x=0, color='k', linewidth=0.5, alpha=0.75)
-    # [ax.vlines(x=[(ts+gap)*i - gap, (ts+gap)*i], ymin=ymin, ymax=ymax, color='k', linewidth=0.5, alpha=0.75) for i in range(1,dim)]
-    # ax.axvline(x=(ts+gap)*dim - gap, color='k', linewidth=0.5, alpha=0.75)
-    # xlabels = scale * (ts)
-    # xlabels = xlabels.astype(int)
-    # xlims = np.concatenate([xlabels[:] + np.full(xlabels.shape[0],i*(ts+gap)) for i in range(0,dim)])
-    # plt.xticks(ticks=xlims,labels=list(xlabels)*dim, fontsize = 12)
     ax.set(ylabel = None)
     ax.set_xlim(0,ts)
     return ax
 
+
 def getTSidx(data,TS):
-    return np.argwhere(data.reshape((data.shape[0],-1),order='F') == TS.reshape((1,-1),order='F'))[0,0]
+    return np.argwhere(data.reshape((data.shape[0],
+                                     -1),
+                                    order='F') == TS.reshape((1, -1),
+                                                             order='F'))[0,0]
+
 
 def plotclusters(datasetname, data, truelabels, dir_=None, sample=False, samplenb=5,figsize=(10,5),color='tab10'):
-    ''' Plot the Timeseries in each clustering group
-        dir: directory path to savee the clusters plot'''
+    ''' 
+    Plot the Timeseries in each clustering group
+        dir: directory path to savee the clusters plot
+    '''
     _, _, dim = data.shape
     nclusters = n_classes(truelabels)
     labels = np.unique(truelabels)
@@ -140,24 +162,24 @@ def plotclusters(datasetname, data, truelabels, dir_=None, sample=False, samplen
         if sample:
             idx = np.random.default_rng().choice(cs,size=samplenb,replace=False)
             for TS in temp[idx]:
-                ax = plotTimeSeries(TS, sep=2, gap=30,ax=ax,figsize=(7,5),color=colors[labels[j]])
-            # plt.title('TSidx:{}, cluster:{}, csize:{}'.format(getTSidx(data,TS), int(labels[j]), cs), y=0.9999, pad=3, fontsize=14)
+                ax = plotTimeSeries(TS, sep=2, gap=30, ax=ax,figsize=(7, 5), color=colors[labels[j]])
             plt.title(f'Class {int(labels[j])}', y=0.9999, pad=3)
         else:
             for TS in temp:
-                ax = plotTimeSeries(TS, sep=2, gap=30,ax=ax,figsize=(7,5),color=color)
+                ax = plotTimeSeries(TS, sep=2, gap=30, ax=ax,figsize=(7, 5),color=color)
             plt.title('cluster:{}, csize:{}'.format(
                    j, cs), y=0.9999, pad=3, fontsize=14)
     fig = plt.gcf()
     patches = [ plt.plot([],[], ls="-", linewidth=4, color=sns.color_palette('tab10',dim)[i], 
             label=f"dim:{i}")[0] for i in range(dim) ]    
-    fig.legend(handles=patches, bbox_to_anchor=(0.5, -0.05), loc='lower center', ncol=dim, prop={'size': 12})
+    fig.legend(handles=patches, bbox_to_anchor=(0.5, - 0.05),
+               loc='lower center', ncol=dim, prop={'size': 12})
     fig.set_size_inches(15.5, 10.5, forward=True)
     fig.tight_layout()
     if dir_ != None:
         if not os.path.exists(dir_):
             os.makedirs(dir_)
-        plt.savefig("%s/%s_Clusters.pdf" % (dir_, datasetname))
+        plt.savefig(f"{dir_}/{datasetname}_Clusters.pdf")
         plt.close('all')
 
 def FDTWd(data):
@@ -169,12 +191,14 @@ def FDTWd(data):
 
 
 def SdmaT(data_shtr):
-    ''' Distance Map approximation of DTW using Shapelet Transform 
-        data_shtr: Shapelet Transformed dataset'''
+    '''
+    Distance Map approximation of DTW using Shapelet Transform 
+        data_shtr: Shapelet Transformed dataset.
+    '''
     sdm = np.zeros([data_shtr.shape[0], data_shtr.shape[0]])
     numb = data_shtr.shape[0] * (data_shtr.shape[0]+1)/2
     for ix in range(1, data_shtr.shape[0]):
-        curr = ix * (ix+1)/2
+        curr = ix * (ix + 1) / 2
         for jx in range(0, ix):
             sdm[ix, jx] = np.linalg.norm(data_shtr[ix, :] - data_shtr[jx, :])
             sdm[jx, ix] = sdm[ix, jx]
@@ -182,8 +206,10 @@ def SdmaT(data_shtr):
 
 
 def DMAPplot(datasetname, dmap, labels, dir_=None):
-    '''Distance Map plot with highliting the clusters in boxes
-        dir_: directory to save the plots to'''
+    '''
+    Distance Map plot with highliting the clusters in boxes
+        dir_: directory to save the plots to.
+    '''
     fig, ax = plt.subplots()
     im = ax.imshow(dmap, cmap='hot', interpolation='None')
     ax.figure.colorbar(im, ax=ax)
@@ -192,8 +218,10 @@ def DMAPplot(datasetname, dmap, labels, dir_=None):
     indx = 1
     rectangles = {}
     for j in range(lac[0].shape[0]):
-        rectangles[int(lac[0][j])] = patches.Rectangle((indx-1, indx-1), lac[1][j]-1, lac[1]
-                                                       [j]-1, linewidth=3 if len(labels) < 20 else 5, edgecolor='k', facecolor='none')
+        rectangles[int(lac[0][j])] = patches.Rectangle((indx - 1, indx - 1),
+                                                       lac[1][j] - 1, lac[1][j] - 1,
+                                                       linewidth=3 if len(labels) < 20 else 5,
+                                                       edgecolor='k', facecolor='none')
         indx += lac[1][j]
     for r in rectangles:
         ax.add_artist(rectangles[r])
@@ -204,16 +232,18 @@ def DMAPplot(datasetname, dmap, labels, dir_=None):
                     fontsize=15 if lac[0].shape[0] > 5 else 30, ha='center', va='center')
     fig.set_size_inches(10.5, 10.5, forward=True)
     fig.tight_layout()  
-    if dir_ != None:
+    if dir_ is not None:
         if not os.path.exists(dir_):
             os.makedirs(dir_)
-        plt.savefig("%s/%s_DTWmap" %
-                    (dir_, datasetname),  format='svg', dpi=1200)
+        plt.savefig(f"{dir_}/{datasetname}_DTWmap", format='svg', dpi=1200)
         plt.close()
 
+
 def constraint_generation_notarray(fr_, data, truelabels):
-    ''' Generation of constraints randomly (i,j, -1[CL]/+1[ML]) 
-        fr_: fraction of datapoints to add constraints to'''
+    ''' 
+    Generation of constraints randomly (i,j, -1[CL]/+1[ML]) 
+        fr_: fraction of datapoints to add constraints to
+    '''
     import random
     xz = data.shape[0]
     nc = int(round(fr_*xz))
@@ -241,11 +271,14 @@ def constraint_generation_notarray(fr_, data, truelabels):
     C_ML = np.array(C_ML)
     return C_ML, C_CL
 
+
 def save_constraints(data, label, fr_, dirpath, dname,nb=5):
-    ''' Write constraints to file 
+    ''' 
+    Write constraints to file 
         dirpath: directory path to write the constraints
-        dname: directory name'''
-    dirc = '{}/{}'.format(dirpath, dname)
+        dname: directory name
+    '''
+    dirc = f'{dirpath}/{dname}'
     if not os.path.exists(dirc):
         os.makedirs(dirc)
     for fr in fr_:
@@ -261,7 +294,9 @@ def save_constraints(data, label, fr_, dirpath, dname,nb=5):
 
 
 def KmeanClusteringTslearn(data, n_clusters, truelabels, metric='dtw',verbos=False):
-    '''Kmeans clustering from TsLearn, can specify differet metrics for similarity calculation '''
+    '''
+    Kmeans clustering from TsLearn, can specify differet metrics for similarity calculation.
+    '''
     nmis = []
     aris = []
     km = TimeSeriesKMeans(n_clusters=n_clusters, metric=metric, max_iter=100)
@@ -276,8 +311,8 @@ def KmeanClusteringTslearn(data, n_clusters, truelabels, metric='dtw',verbos=Fal
         nmis.append(normalized_mutual_info_score(truelabels, pred_labels))
         aris.append(adjusted_rand_score(truelabels, pred_labels))
         if verbos:
-            print("KmeanClusteringTslearn %s [%d], nmi:%f, ri:%f" % (
-                metric, i_trial, nmis[-1], aris[-1]))
+            print(f"KmeanClusteringTslearn {metric}"
+                  f"[{i_trial}], nmi:{nmis[-1]}, ri:{aris[-1]}")
         if nmis[i_trial] > nmis[i_trial-1]:
             best_labels = pred_labels
     return best_labels, nmis, aris
@@ -298,73 +333,98 @@ def KMeanClustering(data, n_clusters, truelabels,verbos=False):
         nmis.append(normalized_mutual_info_score(truelabels, pred_labels))
         aris.append(adjusted_rand_score(truelabels, pred_labels))
         if verbos:
-            print("KMeanClustering [%d], nmi:%f, ri:%f" %
-              (i_trial, nmis[-1], aris[-1]))
+            print(f"KMeanClustering [{i_trial}],"
+                  f"nmi:{nmis[-1]}, ri:{aris[-1]}")
         if nmis[i_trial] > nmis[i_trial-1]:
             best_labels = pred_labels
     return best_labels, nmis, aris
 
 
 def COPKmeansClustering(data, truelabels, n_clusters, ml, cl,verbos=False):
-    ''' Constrained Kmean clustering using  https://github.com/Behrouz-Babaki/COP-Kmeans
+    ''' 
+    Constrained Kmean clustering using  https://github.com/Behrouz-Babaki/COP-Kmeans
         ml: Mustlink constraints 
-        cl: Cannot link constraints'''
+        cl: Cannot link constraints
+    '''
     nmis = []
     aris = []
     pred_labels = cop_kmeans(data, k=n_clusters, ml=ml, cl=cl)
     nmis.append(normalized_mutual_info_score(truelabels, pred_labels[0]))
     aris.append(adjusted_rand_score(truelabels, pred_labels[0]))
-    print("COPKmeansClustering [%d], nmi:%f, ri:%f" % (0, nmis[-1], aris[-1]))
+    print(f"COPKmeansClustering [{i_trial}],"
+            f"nmi:{nmis[-1]}, ri:{aris[-1]}")
     best_labels = pred_labels[0]
     for i_trial in range(1, 10):
         pred_labels = cop_kmeans(data, k=n_clusters, ml=ml, cl=cl)
         nmis.append(normalized_mutual_info_score(truelabels, pred_labels[0]))
         aris.append(adjusted_rand_score(truelabels, pred_labels[0]))
         if verbos:
-            print("COPKmeansClustering [%d], nmi:%f, ri:%f" %
-              (i_trial, nmis[-1], aris[-1]))
+            print(f"COPKmeansClustering [{i_trial}],"
+                  f"nmi:{nmis[-1]}, ri:{aris[-1]}")
         if nmis[i_trial] > nmis[i_trial-1]:
             best_labels = pred_labels [0]
     return best_labels, nmis, aris
 
-def COPKmeansClusteringDBA(data, truelabels, n_clusters, ml, cl, initialization='random',max_iter=300, trial=10,metric='dtw_distance', type_='dependent',verbos=False):
-    ''' Constrained Kmean clustering using  https://github.com/Behrouz-Babaki/COP-Kmeans
-        ml: Mustlink constraints 
-        cl: Cannot link constraints'''
+
+def COPKmeansClusteringDBA(data, truelabels, n_clusters,
+                           ml, cl, initialization='random',
+                           max_iter=300, trial=10,
+                           metric='dtw_distance', type_='dependent',
+                           verbos=False):
+    ''' 
+
+    '''
     nmis = []
     aris = []
-    pred_labels = CopKmeansDBA.cop_kmeans(data, k=n_clusters, ml=ml, cl=cl, metric=metric, type_=type_, max_iter=max_iter, initialization=initialization)
+    pred_labels = CopKmeansDBA.cop_kmeans(data, k=n_clusters, ml=ml, cl=cl,
+                                          metric=metric, type_=type_,
+                                          max_iter=max_iter,
+                                          initialization=initialization)
     nmis.append(normalized_mutual_info_score(truelabels, pred_labels[0]))
     aris.append(adjusted_rand_score(truelabels, pred_labels[0]))
-    print("COPKmeansClustering [%d], nmi:%f, ri:%f" % (0, nmis[-1], aris[-1]))
+            print(f"COPKmeansClustering [{i_trial}],"
+                  f"nmi:{nmis[-1]}, ri:{aris[-1]}")
     best_labels = pred_labels[0]
     centers = pred_labels[1]
     for i_trial in range(1, trial):
-        pred_labels = CopKmeansDBA.cop_kmeans(data, k=n_clusters, ml=ml, cl=cl, metric=metric, type_=type_, max_iter=max_iter, initialization=initialization)
+        pred_labels = CopKmeansDBA.cop_kmeans(data, k=n_clusters, ml=ml, cl=cl,
+                                              metric=metric, type_=type_,
+                                              max_iter=max_iter,
+                                              initialization=initialization)
         nmis.append(normalized_mutual_info_score(truelabels, pred_labels[0]))
         aris.append(adjusted_rand_score(truelabels, pred_labels[0]))
         if verbos:
-            print("COPKmeansClustering [%d], nmi:%f, ri:%f" %
-              (i_trial, nmis[-1], aris[-1]))
+            print(f"COPKmeansClustering [{i_trial}],"
+                  f"nmi:{nmis[-1]}, ri:{aris[-1]}")
         if nmis[i_trial] > nmis[i_trial-1]:
             best_labels = pred_labels [0]
             centers = pred_labels [1]
     return best_labels, nmis, aris, centers
 
+
 def ShapeletTransformData(data, model):
-    ''' Embedding of the TS in the new feature space using shapelet Transfrom '''
+    '''
+    Embedding of the TS in the new feature space using shapelet Transfrom.
+    '''
     data_shtr = np.empty((data.shape[0], sum(model.shapelet_lengths.values())))
     for i in range(data.shape[0]):
         data_shtr[i] = model._shapelet_transform(data[i])
     return data_shtr
 
 
-def FeatureSpaceUMAP(data, dataset, label, labelType, alpha=None, gamma=None, fr=None, algorithm=None, dirsave=None, description=None, ml=None, cl=None, random_state=None, palette="hot", linestyle='.'):
-    ''' Visualization using UMAP in 2D space
-        algorithm: string specify the algorithm used to predict the labels
-        labelType: string specifying the typer of the labels (predicted / True)    
-        dirsave: directory to save the plot to. Default (None) will not save the plots
-        '''
+def FeatureSpaceUMAP(data, dataset, label, labelType,
+                     alpha=None, gamma=None, fr=None,
+                     algorithm=None, dirsave=None,
+                     description=None, ml=None, cl=None,
+                     random_state=None, palette="hot",
+                     linestyle='.'):
+    ''' 
+    Visualization using UMAP in 2D space
+    algorithm: string specify the algorithm used to predict the labels
+    labelType: string specifying the typer of the labels (predicted / True)
+    dirsave: directory to save the plot to. 
+    Default (None) will not save the plots
+    '''
     plt.rcParams['figure.constrained_layout.use'] = True
     reducer = umap.UMAP(random_state=random_state)
     embedding = reducer.fit_transform(data)
@@ -376,13 +436,22 @@ def FeatureSpaceUMAP(data, dataset, label, labelType, alpha=None, gamma=None, fr
     if fr:
         fig, axs = plt.subplots(2, 1)
         axs0, axs1 = axs 
-        axs1.scatter(embedding[:, 0], embedding[:, 1], c=[sns.color_palette(palette,np.unique(label).shape[0]+1)[x] for x in list(label.astype(int))], alpha=0.7)
+        axs1.scatter(embedding[:, 0], embedding[:, 1],
+                     c=[sns.color_palette(palette,
+                                          np.unique(label).shape[0]+1)[x]
+                        for x in list(label.astype(int))],
+                     alpha=0.7)
         axs1.set_title("The constraint information is displayed. ")
-        plt.suptitle("%s %s %s %s" % (dataset, algorithm, labelType, description))
+        plt.suptitle(f"{dataset} {algorithm} {labelType} {description}")
         if ml.shape[0] != 0:
             for i in ml:
-                axs1.plot([embedding[i[0],0], embedding[i[1],0]], [embedding[i[0],1], embedding[i[1],1]], color='black', linestyle='solid', linewidth=5, alpha=0.8)
-                axs1.scatter([embedding[i[0],0], embedding[i[1],0]], [embedding[i[0],1], embedding[i[1],1]], color='green', alpha=0.05)
+                axs1.plot([embedding[i[0], 0], embedding[i[1], 0]],
+                          [embedding[i[0], 1], embedding[i[1], 1]],
+                          color='black', linestyle='solid',
+                          linewidth=5, alpha=0.8)
+                axs1.scatter([embedding[i[0], 0], embedding[i[1], 0]],
+                             [embedding[i[0], 1], embedding[i[1], 1]],
+                             color='green', alpha=0.05)
         if cl.shape[0] != 0:
             for i in cl:
                 axs1.plot([embedding[i[0], 0], embedding[i[1], 0]],
